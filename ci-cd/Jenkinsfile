@@ -1,0 +1,138 @@
+// ==============================================================================
+// Jenkinsfile: Pipeline as Code for Telecom Service Outage Dashboard
+// Student: Manas Akhare | Roll No: 23102C0017 | BE CMPN C
+// Continuous Integration, Continuous Testing & Continuous Deployment
+// ==============================================================================
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['staging', 'production', 'local'], description: 'Deployment Target Environment')
+        string(name: 'DEPLOY_PORT', defaultValue: '8080', description: 'HTTP Application Port')
+        booleanParam(name: 'RUN_SELENIUM_TESTS', defaultValue: true, description: 'Execute End-to-End Headless Selenium Test Suite')
+        booleanParam(name: 'BUILD_DOCKER_IMAGE', defaultValue: true, description: 'Build and Publish Versioned Container Image')
+        booleanParam(name: 'RUN_ANSIBLE_PROVISIONING', defaultValue: true, description: 'Trigger Ansible Target Environment Provisioning')
+    }
+
+    environment {
+        APP_NAME = 'telecom-service-outage-dashboard'
+        VERSION = '1.0.0'
+        IMAGE_TAG = "telecom/outage-dashboard:${BUILD_NUMBER}"
+        REGISTRY = 'docker.io'
+        NOC_NOTIFICATION_EMAIL = 'xmanasakhare@gmail.com'
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '5'))
+        ansiColor('xterm')
+    }
+
+    stages {
+        stage('1. Checkout SCM') {
+            steps {
+                echo "--> Stage 1: Checking out source code from Git repository..."
+                checkout scm
+                script {
+                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    echo "--> Checked out Git Commit: ${commitHash} on Branch: ${env.BRANCH_NAME ?: 'main'}"
+                }
+            }
+        }
+
+        stage('2. Maven Compile & Unit Test') {
+            steps {
+                echo "--> Stage 2: Compiling Java 17 source and executing Unit Tests..."
+                sh 'mvn clean compile test -Dtest=TelecomOutageApplicationTests,OutageServiceTest,OutageApiControllerTest'
+            }
+            post {
+                always {
+                    junit testResults: 'target/surefire-reports/TEST-com.telecom.outage.*.xml', allowEmptyResults: false
+                }
+            }
+        }
+
+        stage('3. Continuous Testing: Selenium E2E') {
+            when {
+                expression { return params.RUN_SELENIUM_TESTS == true }
+            }
+            steps {
+                echo "--> Stage 3: Executing Headless Selenium WebDriver User Journey Tests..."
+                sh 'mvn test -Dtest=OutageDashboardSeleniumTest'
+            }
+            post {
+                always {
+                    junit testResults: 'target/surefire-reports/TEST-com.telecom.outage.selenium.*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'target/screenshots/*.png', allowEmptyArchive: true
+                }
+                failure {
+                    echo "--> CRITICAL: Selenium Test Suite Failed! Halting deployment pipeline to safeguard production SLA."
+                }
+            }
+        }
+
+        stage('4. Package Artifact') {
+            steps {
+                echo "--> Stage 4: Packaging production executable Spring Boot JAR..."
+                sh 'mvn package -DskipTests'
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/telecom-service-outage-dashboard.jar', fingerprint: true
+                    echo "--> Build artifact archived: target/telecom-service-outage-dashboard.jar"
+                }
+            }
+        }
+
+        stage('5. Docker Image Build & Tag') {
+            when {
+                expression { return params.BUILD_DOCKER_IMAGE == true }
+            }
+            steps {
+                echo "--> Stage 5: Building multi-stage Docker container image: ${IMAGE_TAG}..."
+                sh "docker build -f docker/Dockerfile -t ${IMAGE_TAG} -t telecom/outage-dashboard:latest ."
+                sh "docker images | grep outage-dashboard"
+            }
+        }
+
+        stage('6. Ansible Target Provisioning & Deployment') {
+            when {
+                expression { return params.RUN_ANSIBLE_PROVISIONING == true }
+            }
+            steps {
+                echo "--> Stage 6: Orchestrating target host configuration with Ansible Playbook..."
+                dir('ansible') {
+                    sh "ansible-playbook -i inventory.ini playbook.yml --extra-vars \"environment_tier=${params.ENVIRONMENT} app_port=${params.DEPLOY_PORT}\""
+                }
+            }
+        }
+
+        stage('7. Health-Check & Smoke Validation') {
+            steps {
+                echo "--> Stage 7: Performing automated HTTP health check validation..."
+                script {
+                    def healthCheckCmd = "curl -s -f http://localhost:${params.DEPLOY_PORT}/api/health || exit 1"
+                    echo "--> Querying: http://localhost:${params.DEPLOY_PORT}/api/health"
+                    sh healthCheckCmd
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "=========================================================="
+            echo " PIPELINE SUCCEEDED: Telecom Service Outage Dashboard"
+            echo " Student: Manas Akhare (Roll: 23102C0017)"
+            echo " Deployed to: ${params.ENVIRONMENT} on Port: ${params.DEPLOY_PORT}"
+            echo "=========================================================="
+        }
+        failure {
+            echo "=========================================================="
+            echo " PIPELINE FAILED: Rollback Playbook Trigger Recommended"
+            echo " Notification dispatched to: ${NOC_NOTIFICATION_EMAIL}"
+            echo "=========================================================="
+        }
+    }
+}

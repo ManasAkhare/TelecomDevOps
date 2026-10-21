@@ -1,0 +1,16 @@
+---
+# Role variables for telecom_app
+app_name: "telecom-service-outage-dashboard"
+app_version: "1.0.0"
+app_user: "telecom"
+app_group: "telecom"
+app_install_dir: "/opt/telecom-dashboard"
+app_log_dir: "/var/log/telecom"
+app_jar_name: "telecom-service-outage-dashboard.jar"
+app_port: 8080
+nginx_port: 80
+java_package: "openjdk-17-jre-headless"
+systemd_service_name: "telecom-dashboard"
+health_check_url: "http://127.0.0.1:{{ app_port }}/api/health"
+health_check_retries: 10
+health_check_delay: 5

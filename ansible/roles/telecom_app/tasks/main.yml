@@ -1,0 +1,132 @@
+---
+# ==============================================================================
+# Ansible Tasks: Automated Provisioning for Telecom Outage Dashboard
+# Student: Manas Akhare | Roll No: 23102C0017
+# ==============================================================================
+
+- name: 1. Update APT package index cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: 2. Install target runtime dependencies (Java 17, Nginx, Curl, UFW)
+  apt:
+    name:
+      - "{{ java_package }}"
+      - nginx
+      - curl
+      - ufw
+      - tar
+      - rsync
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: 3. Ensure telecom application system group exists
+  group:
+    name: "{{ app_group }}"
+    state: present
+    system: yes
+
+- name: 4. Ensure telecom application service user exists
+  user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    shell: /bin/false
+    home: "{{ app_install_dir }}"
+    create_home: no
+    system: yes
+
+- name: 5. Create application installation and logging directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0755'
+  loop:
+    - "{{ app_install_dir }}"
+    - "{{ app_log_dir }}"
+    - "{{ app_install_dir }}/backup"
+
+- name: 6. Backup existing release artifact before deployment (Rollback preparation)
+  copy:
+    src: "{{ app_install_dir }}/{{ app_jar_name }}"
+    dest: "{{ app_install_dir }}/backup/{{ app_jar_name }}.previous"
+    remote_src: yes
+    force: yes
+  ignore_errors: yes
+
+- name: 7. Deploy newly built Telecom Outage Dashboard application binary
+  copy:
+    src: "{{ playbook_dir }}/../target/{{ app_jar_name }}"
+    dest: "{{ app_install_dir }}/{{ app_jar_name }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0644'
+  notify: Restart Telecom Dashboard Service
+
+- name: 8. Configure Systemd Service Unit from Jinja2 template
+  template:
+    src: telecom-dashboard.service.j2
+    dest: /etc/systemd/system/{{ systemd_service_name }}.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload Systemd Daemon
+    - Restart Telecom Dashboard Service
+
+- name: 9. Configure Nginx Reverse Proxy virtual host
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/telecom-dashboard.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: 10. Enable Nginx site configuration link
+  file:
+    src: /etc/nginx/sites-available/telecom-dashboard.conf
+    dest: /etc/nginx/sites-enabled/telecom-dashboard.conf
+    state: link
+  notify: Reload Nginx Service
+
+- name: 11. Remove default Nginx site configuration if present
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx Service
+
+- name: 12. Configure UFW Firewall rules for HTTP and Application port
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "{{ nginx_port }}"
+    - "{{ app_port }}"
+  when: ansible_os_family == "Debian"
+
+- name: 13. Flush handlers immediately to start services before verification
+  meta: flush_handlers
+
+- name: 14. Ensure Telecom Dashboard systemd service is active and enabled
+  systemd:
+    name: "{{ systemd_service_name }}"
+    state: started
+    enabled: yes
+
+- name: 15. Perform Automated Health-Check on deployed backend endpoint
+  uri:
+    url: "{{ health_check_url }}"
+    status_code: 200
+    return_content: yes
+  register: health_result
+  until: health_result.status == 200
+  retries: "{{ health_check_retries }}"
+  delay: "{{ health_check_delay }}"
+
+- name: 16. Display Health-Check telemetry response
+  debug:
+    msg: "Application Health Verified: Status={{ health_result.json.status }} | Service={{ health_result.json.service }} | Author={{ health_result.json.author }}"

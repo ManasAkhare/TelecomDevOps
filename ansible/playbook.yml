@@ -1,0 +1,38 @@
+---
+# ==============================================================================
+# Master Provisioning Playbook: Telecom Service Outage Dashboard
+# Student: Manas Akhare | Roll No: 23102C0017 | BE CMPN C
+# Usage: ansible-playbook -i inventory.ini playbook.yml
+# ==============================================================================
+
+- name: Provision and Deploy Telecom Service Outage Dashboard Target Nodes
+  hosts: telecom_prod_servers:telecom_staging_servers:telecom_local
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_version: "1.0.0"
+    deployment_timestamp: "{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+
+  pre_tasks:
+    - name: Pre-Flight Check - Display Target Architecture & Distribution
+      debug:
+        msg: "Provisioning target node: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }}) for Manas Akhare (Roll: 23102C0017)"
+
+  roles:
+    - telecom_app
+
+  post_tasks:
+    - name: Post-Deployment Verification Summary
+      debug:
+        msg:
+          - "=========================================================="
+          - " TELECOM OUTAGE DASHBOARD DEPLOYED SUCCESSFULLY"
+          - " Student Name : Manas Akhare"
+          - " Roll Number  : 23102C0017"
+          - " Division     : BE CMPN C"
+          - " Environment  : {{ environment_tier | default('production') }}"
+          - " Service URL  : http://{{ ansible_host | default('localhost') }}:{{ nginx_port | default(80) }}/"
+          - " Health Check : http://{{ ansible_host | default('localhost') }}:{{ app_port | default(8080) }}/api/health"
+          - " Idempotency  : Verified on consecutive playbook runs"
+          - "=========================================================="

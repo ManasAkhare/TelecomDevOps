@@ -1,0 +1,19 @@
+[Unit]
+Description=Telecom Service Outage Dashboard (NOC Pulse) - Manas Akhare
+After=syslog.target network.target
+
+[Service]
+User={{ app_user }}
+Group={{ app_group }}
+Type=simple
+WorkingDirectory={{ app_install_dir }}
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -XX:+UseG1GC -jar {{ app_install_dir }}/{{ app_jar_name }} --server.port={{ app_port }}
+StandardOutput=append:{{ app_log_dir }}/application.log
+StandardError=append:{{ app_log_dir }}/error.log
+Restart=always
+RestartSec=10
+SuccessExitStatus=143
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telecom Service Outage Dashboard | NOC Control Center</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <span class="live-dot"></span>
+                <span class="brand-title">TELECOM NOC PULSE</span>
+                <span class="brand-tag">v1.0.0-MVP</span>
+            </div>
+            <div class="student-meta">
+                <span class="badge-pill">Lead: Manas Akhare (Roll: 23102C0017)</span>
+                <span class="badge-pill circle-badge">BE CMPN-C | DevOps Engineering</span>
+                <button id="openNewIncidentBtn" class="btn btn-primary" onclick="openModal('newIncidentModal')">+ Log Outage Event</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Flash Alerts -->
+        <div th:if="${successMessage}" class="alert-banner alert-success" id="successBanner">
+            <span>&#10003; </span><span th:text="${successMessage}"></span>
+            <button class="close-alert" onclick="this.parentElement.style.display='none'">&times;</button>
+        </div>
+        <div th:if="${errorMessage}" class="alert-banner alert-danger" id="errorBanner">
+            <span>&#9888; </span><span th:text="${errorMessage}"></span>
+            <button class="close-alert" onclick="this.parentElement.style.display='none'">&times;</button>
+        </div>
+
+        <!-- SECTION 1: CRITICAL ALERT & EXCEPTION VIEW -->
+        <section class="section-exception" id="exceptionViewSection" th:if="${not #lists.isEmpty(criticalAlerts)}">
+            <div class="exception-card">
+                <div class="exception-header">
+                    <div class="exception-title">
+                        <span class="pulse-indicator"></span>
+                        <h2>ACTIVE CRITICAL EXCEPTION ALERTS (<span th:text="${#lists.size(criticalAlerts)}"></span>)</h2>
+                    </div>
+                    <span class="badge badge-danger">Immediate NOC Attention Required</span>
+                </div>
+                <p class="exception-desc">High-priority telecom network faults exceeding subscriber threshold or violating carrier SLA commitments.</p>
+                <div class="exception-grid">
+                    <div th:each="alert : ${criticalAlerts}" class="critical-incident-box">
+                        <div class="cib-top">
+                            <span class="cib-id" th:text="${alert.id}">OUT-1001</span>
+                            <span class="cib-region" th:text="${alert.region}">Mumbai Metro</span>
+                            <span class="cib-subscribers" th:text="${#numbers.formatInteger(alert.affectedSubscribers, 3, 'COMMA')} + ' Users'">85,000 Users</span>
+                        </div>
+                        <h4 th:text="${alert.title}">BKC Core DWDM severed</h4>
+                        <div class="cib-bottom">
+                            <span class="cib-status" th:text="'Status: ' + ${alert.status.label}">Status: Investigating</span>
+                            <button class="btn btn-sm btn-outline-light"
+                                    th:attr="data-id=${alert.id}, data-title=${alert.title}, data-region=${alert.region}, data-service=${alert.serviceType.displayName}, data-severity=${alert.severity.label}, data-status=${alert.status.label}, data-subscribers=${alert.affectedSubscribers}, data-towers=${alert.impactedTowers}, data-cause=${alert.rootCause}, data-reporter=${alert.reportedBy}, data-time=${alert.formattedReportedAt}, data-notes=${alert.notes}"
+                                    onclick="openDrillDownFromElement(this)">Drill Down &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: SUMMARY INDICATORS (KPIs) -->
+        <section class="section-metrics" id="summaryIndicators">
+            <div class="metric-card">
+                <div class="metric-icon active-icon">&#9889;</div>
+                <div class="metric-data">
+                    <span class="metric-value" id="kpiActiveOutages" th:text="${metrics.activeOutages}">3</span>
+                    <span class="metric-label">Active Network Outages</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon critical-icon">&#128308;</div>
+                <div class="metric-data">
+                    <span class="metric-value text-danger" id="kpiCriticalAlerts" th:text="${metrics.criticalAlerts}">2</span>
+                    <span class="metric-label">P1 Critical Outages</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon subscriber-icon">&#128101;</div>
+                <div class="metric-data">
+                    <span class="metric-value" id="kpiImpactedSubscribers" th:text="${#numbers.formatInteger(metrics.totalImpactedSubscribers, 3, 'COMMA')}">211,000</span>
+                    <span class="metric-label">Impacted Subscribers</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon mttr-icon">&#9201;</div>
+                <div class="metric-data">
+                    <span class="metric-value" id="kpiMttr" th:text="${metrics.meanTimeToResolutionHours} + 'h'">1.85h</span>
+                    <span class="metric-label">Mean Time to Recovery (MTTR)</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon sla-icon">&#10004;</div>
+                <div class="metric-data">
+                    <span class="metric-value text-success" id="kpiSlaCompliance" th:text="${metrics.slaCompliancePercentage} + '%'">94.2%</span>
+                    <span class="metric-label">SLA Compliance Rate</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SEARCHABLE DASHBOARD CONTROLS -->
+        <section class="section-search">
+            <form method="get" action="/" class="search-form" id="searchFilterForm">
+                <div class="search-bar-wrapper">
+                    <input type="text" id="searchInput" name="search" th:value="${currentSearch}" 
+                           placeholder="Search by Outage ID, Circle, Title, or Root Cause keyword..." 
+                           class="form-control search-input" onkeyup="clientSideFilter()">
+                </div>
+                <div class="filter-controls">
+                    <select name="region" id="regionFilter" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- All Circles / Regions --</option>
+                        <option value="Mumbai Metro" th:selected="${currentRegion == 'Mumbai Metro'}">Mumbai Metro</option>
+                        <option value="Delhi NCR" th:selected="${currentRegion == 'Delhi NCR'}">Delhi NCR</option>
+                        <option value="Bangalore Circle" th:selected="${currentRegion == 'Bangalore Circle'}">Bangalore Circle</option>
+                        <option value="Pune Circle" th:selected="${currentRegion == 'Pune Circle'}">Pune Circle</option>
+                        <option value="Hyderabad Cyberabad" th:selected="${currentRegion == 'Hyderabad Cyberabad'}">Hyderabad Cyberabad</option>
+                    </select>
+
+                    <select name="severity" id="severityFilter" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- All Severities --</option>
+                        <option th:each="sev : ${severities}" th:value="${sev}" th:text="${sev.label}" th:selected="${currentSeverity == sev}"></option>
+                    </select>
+
+                    <select name="status" id="statusFilter" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- All Statuses --</option>
+                        <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.label}" th:selected="${currentStatus == st}"></option>
+                    </select>
+
+                    <button type="submit" class="btn btn-secondary">Filter</button>
+                    <a href="/" class="btn btn-outline">Reset</a>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECTION 4: OUTAGE INCIDENT INVENTORY TABLE (STATUS DRILL-DOWN) -->
+        <section class="section-table">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3>TELECOM OUTAGE REGISTRY (<span id="outageCountDisplay" th:text="${#lists.size(outages)}">5</span>)</h3>
+                    <span class="sub-text">Click any incident row to view deep status drill-down, SLA telemetry, and cellular tower details</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="outageDataTable">
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Title / Subsystem</th>
+                                <th>Service Stack</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Telecom Circle</th>
+                                <th>Subscribers Impacted</th>
+                                <th>Reported Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="outageTableBody">
+                            <tr th:each="outage : ${outages}" 
+                                class="outage-row"
+                                th:classappend="${outage.isCriticalException()} ? 'row-critical' : ''"
+                                th:attr="data-id=${outage.id}, data-title=${outage.title}, data-region=${outage.region}, data-service=${outage.serviceType.displayName}, data-severity=${outage.severity.label}, data-status=${outage.status.label}, data-subscribers=${outage.affectedSubscribers}, data-towers=${outage.impactedTowers}, data-cause=${outage.rootCause}, data-reporter=${outage.reportedBy}, data-time=${outage.formattedReportedAt}, data-notes=${outage.notes}"
+                                onclick="openDrillDownFromElement(this)">
+                                <td><span class="badge-mono" th:text="${outage.id}">OUT-1001</span></td>
+                                <td>
+                                    <strong class="outage-title-text" th:text="${outage.title}">Core Fiber Cut</strong>
+                                    <div class="cause-preview" th:text="${outage.rootCause}">Underground excavation damage</div>
+                                </td>
+                                <td><span class="tag-service" th:text="${outage.serviceType.displayName}">5G Core</span></td>
+                                <td>
+                                    <span class="badge" th:classappend="'badge-' + ${outage.severity.badgeColor}" th:text="${outage.severity.label}">Critical</span>
+                                </td>
+                                <td>
+                                    <span class="status-indicator" th:classappend="'status-' + ${outage.status.name().toLowerCase()}" th:text="${outage.status.label}">Investigating</span>
+                                </td>
+                                <td th:text="${outage.region}">Mumbai</td>
+                                <td class="number-cell" th:text="${#numbers.formatInteger(outage.affectedSubscribers, 3, 'COMMA')}">85,000</td>
+                                <td class="time-cell" th:text="${outage.formattedReportedAt}">21-Oct 14:00</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="action-btn-group">
+                                        <button class="btn btn-xs btn-outline" 
+                                                th:attr="data-id=${outage.id}, data-title=${outage.title}, data-region=${outage.region}, data-service=${outage.serviceType.displayName}, data-severity=${outage.severity.label}, data-status=${outage.status.label}, data-subscribers=${outage.affectedSubscribers}, data-towers=${outage.impactedTowers}, data-cause=${outage.rootCause}, data-reporter=${outage.reportedBy}, data-time=${outage.formattedReportedAt}, data-notes=${outage.notes}"
+                                                onclick="openDrillDownFromElement(this)">Inspect</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(outages)}">
+                                <td colspan="9" class="no-records">No telecom service outages matching current search criteria. All systems operating within SLA limits.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: NEW OUTAGE DATA/EVENT ENTRY -->
+    <div id="newIncidentModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>&#10010; Log Telecom Outage Event (Data/Event Entry)</h3>
+                    <button class="close-btn" onclick="closeModal('newIncidentModal')">&times;</button>
+                </div>
+                <form method="post" action="/outages/create" th:object="${newOutage}" id="newOutageForm">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="inputTitle">Incident Title / Subsystem Fault *</label>
+                            <input type="text" id="inputTitle" th:field="*{title}" required class="form-control" placeholder="e.g. 5G Carrier Aggregation Core Node Timeout">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="inputServiceType">Telecom Service Stack *</label>
+                                <select id="inputServiceType" th:field="*{serviceType}" required class="form-select">
+                                    <option th:each="st : ${serviceTypes}" th:value="${st}" th:text="${st.displayName}"></option>
+                                </select>
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="inputSeverity">Severity Tier *</label>
+                                <select id="inputSeverity" th:field="*{severity}" required class="form-select">
+                                    <option th:each="sev : ${severities}" th:value="${sev}" th:text="${sev.label}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="inputRegion">Telecom Circle / Metro Region *</label>
+                                <input type="text" id="inputRegion" th:field="*{region}" required class="form-control" placeholder="e.g. Mumbai Metro, Pune Circle, Delhi NCR">
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="inputSubscribers">Estimated Affected Subscribers *</label>
+                                <input type="number" id="inputSubscribers" th:field="*{affectedSubscribers}" min="0" required class="form-control" placeholder="e.g. 25000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputTowers">Impacted Cellular Towers / BSS Identifiers</label>
+                            <input type="text" id="inputTowers" th:field="*{impactedTowers}" class="form-control" placeholder="e.g. TWR-MUM-401, TWR-MUM-402, TWR-MUM-419">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputCause">Root Cause Analysis / Preliminary Investigation</label>
+                            <textarea id="inputCause" th:field="*{rootCause}" rows="2" class="form-control" placeholder="Detailed engineering assessment of root cause..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="inputReportedBy">NOC Engineer / Duty Officer *</label>
+                                <input type="text" id="inputReportedBy" th:field="*{reportedBy}" required class="form-control" value="Manas Akhare (NOC Lead)">
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="inputSla">SLA Target Resolution (Minutes)</label>
+                                <input type="number" id="inputSla" th:field="*{slaTargetMinutes}" min="15" value="120" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputNotes">Dispatched Response & Mitigation Notes</label>
+                            <textarea id="inputNotes" th:field="*{notes}" rows="2" class="form-control" placeholder="Field engineer dispatch, optical splice team ETA, traffic bypass details..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('newIncidentModal')">Cancel</button>
+                        <button type="submit" id="submitNewOutageBtn" class="btn btn-primary">Submit Outage to NOC Queue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: STATUS DRILL-DOWN MODAL -->
+    <div id="drillDownModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <span class="badge-mono" id="modalDrillDownId">OUT-XXXX</span>
+                        <h3 id="modalDrillDownTitle">Outage Drill-Down Details</h3>
+                    </div>
+                    <button class="close-btn" onclick="closeModal('drillDownModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="drilldown-summary-grid">
+                        <div class="dd-item">
+                            <span class="dd-label">Circle / Region:</span>
+                            <span class="dd-val" id="modalDrillDownRegion">-</span>
+                        </div>
+                        <div class="dd-item">
+                            <span class="dd-label">Service Stack:</span>
+                            <span class="dd-val" id="modalDrillDownService">-</span>
+                        </div>
+                        <div class="dd-item">
+                            <span class="dd-label">Severity Tier:</span>
+                            <span class="dd-val" id="modalDrillDownSeverity">-</span>
+                        </div>
+                        <div class="dd-item">
+                            <span class="dd-label">Current Status:</span>
+                            <span class="dd-val" id="modalDrillDownStatus">-</span>
+                        </div>
+                        <div class="dd-item">
+                            <span class="dd-label">Affected Subscribers:</span>
+                            <span class="dd-val text-danger" id="modalDrillDownSubscribers">-</span>
+                        </div>
+                        <div class="dd-item">
+                            <span class="dd-label">Reported Timestamp:</span>
+                            <span class="dd-val" id="modalDrillDownTime">-</span>
+                        </div>
+                    </div>
+
+                    <div class="drilldown-block">
+                        <h4>Impacted Infrastructure & Cell Towers:</h4>
+                        <div class="tower-pills" id="modalDrillDownTowers">-</div>
+                    </div>
+
+                    <div class="drilldown-block">
+                        <h4>Preliminary Root Cause:</h4>
+                        <div class="cause-box" id="modalDrillDownCause">-</div>
+                    </div>
+
+                    <div class="drilldown-block">
+                        <h4>NOC Dispatch & Field Mitigation Notes:</h4>
+                        <div class="notes-box" id="modalDrillDownNotes">-</div>
+                    </div>
+
+                    <!-- Workflow Transition Control -->
+                    <div class="drilldown-block transition-box">
+                        <h4>Update Incident Workflow Status:</h4>
+                        <form id="updateStatusForm" method="post" action="">
+                            <div class="form-row">
+                                <div class="form-group col-half">
+                                    <label for="modalNewStatus">Transition State to:</label>
+                                    <select id="modalNewStatus" name="status" class="form-select">
+                                        <option value="INVESTIGATING">Investigating</option>
+                                        <option value="IDENTIFIED">Identified</option>
+                                        <option value="MONITORING">Monitoring</option>
+                                        <option value="RESOLVED">Resolved</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-half">
+                                    <label for="modalStatusNote">Append Engineer Note:</label>
+                                    <input type="text" id="modalStatusNote" name="notes" class="form-control" placeholder="e.g. Fiber splice completed, traffic normalized">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">Update Status & Commit to Audit Log</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('drillDownModal')">Close View</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p><strong>Ansible-Provisioned Telecom Service Outage Dashboard</strong> &mdash; Continuous Deployment Architecture</p>
+            <p>Developed by: <strong>Manas Akhare</strong> (Roll: 23102C0017) | BE CMPN - VII | CI/CD Pipeline & Ansible Orchestration</p>
+            <div class="footer-links">
+                <a href="/api/health" target="_blank">API Health Status</a> &bull;
+                <a href="/api/outages" target="_blank">REST API Endpoint</a> &bull;
+                <a href="/api/metrics" target="_blank">NOC Metrics API</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

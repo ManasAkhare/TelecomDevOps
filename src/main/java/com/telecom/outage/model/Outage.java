@@ -117,4 +117,17 @@ public class Outage {
     public boolean isHighImpact() {
         return affectedSubscribers >= 25000;
     }
+
+    public long getRemainingSlaMinutes() {
+        if (reportedAt == null || status == OutageStatus.RESOLVED) return 0;
+        long elapsedMinutes = java.time.Duration.between(reportedAt, LocalDateTime.now()).toMinutes();
+        return Math.max(0, slaTargetMinutes - elapsedMinutes);
+    }
+
+    public boolean isSlaBreached() {
+        if (status == OutageStatus.RESOLVED) return false;
+        if (reportedAt == null) return false;
+        long elapsedMinutes = java.time.Duration.between(reportedAt, LocalDateTime.now()).toMinutes();
+        return elapsedMinutes > slaTargetMinutes;
+    }
 }

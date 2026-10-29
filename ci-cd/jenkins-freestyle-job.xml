@@ -19,7 +19,7 @@ Continuous Integration with Maven build, test execution, and artifact archiving.
     <configVersion>2</configVersion>
     <userRemoteConfigs>
       <hudson.plugins.git.UserRemoteConfig>
-        <url>https://github.com/manasakhare/telecom-service-outage-dashboard.git</url>
+        <url>https://github.com/ManasAkhare/TelecomDevOps.git</url>
         <credentialsId>github-credentials-manas</credentialsId>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>

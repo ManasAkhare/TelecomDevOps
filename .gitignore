@@ -39,3 +39,5 @@ Desktop.ini
 *.tmp
 target/screenshots/*.png
 ansible/*.retry
+__pycache__/
+*.pyc

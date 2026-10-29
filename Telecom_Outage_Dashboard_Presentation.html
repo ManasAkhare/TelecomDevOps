@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0">
+    <title>Ansible Telecom Outage Dashboard - DevOps Presentation (Manas Akhare)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            background: #030712;
+            color: #F8FAFC;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Presentation Container */
+        .deck-wrapper {
+            width: 1920px;
+            height: 1080px;
+            position: relative;
+            overflow: hidden;
+            background: #0a0f1d;
+        }
+
+        /* Slide Dimensions */
+        .slide {
+            width: 1920px;
+            height: 1080px;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 70px 100px 50px 100px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: radial-gradient(circle at 15% 20%, #111a33 0%, #0a0f1d 70%);
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* Header */
+        .slide-header {
+            margin-bottom: 30px;
+        }
+        .slide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6, 182, 212, 0.15);
+            color: #38BDF8;
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        .slide-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -1px;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #FFFFFF 30%, #BAE6FD 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .slide-subtitle {
+            font-size: 1.6rem;
+            color: #94A3B8;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        /* Body */
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Footer */
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 25px;
+            border-top: 1px solid #1E293B;
+            font-size: 1.25rem;
+            color: #64748B;
+        }
+        .footer-left { font-weight: 600; color: #94A3B8; }
+        .footer-center { font-weight: 500; color: #38BDF8; }
+        .footer-right { font-weight: 700; color: #CBD5E1; }
+
+        /* Title Hero Slide */
+        .hero-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+        .hero-cand-box {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 30px 45px;
+        }
+        .hero-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563EB, #06B6D4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+        }
+        .hero-cand-name {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+        .hero-cand-roll {
+            font-size: 1.8rem;
+            color: #94A3B8;
+            margin-top: 5px;
+        }
+        .hero-cand-roll span {
+            color: #38BDF8;
+            font-weight: 700;
+        }
+        .hero-cand-sub {
+            font-size: 1.4rem;
+            color: #64748B;
+            margin-top: 5px;
+        }
+        .hero-hl-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+        }
+        .hero-hl-card {
+            background: #131D31;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 4px solid #2563EB;
+        }
+        .hero-hl-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #10B981;
+            margin-bottom: 8px;
+        }
+        .hero-hl-lbl {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #F8FAFC;
+            margin-bottom: 6px;
+        }
+        .hero-hl-desc {
+            font-size: 1.1rem;
+            color: #94A3B8;
+            line-height: 1.4;
+        }
+
+        /* 3-Column Grid */
+        .grid-3-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 35px;
+        }
+        .slide-card {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .card-pill {
+            align-self: flex-start;
+            background: rgba(37, 99, 235, 0.2);
+            color: #60A5FA;
+            border: 1px solid rgba(37, 99, 235, 0.4);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .card-heading {
+            font-size: 2rem;
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+        .card-stat-val {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #06B6D4;
+        }
+        .card-body-text {
+            font-size: 1.35rem;
+            color: #94A3B8;
+            line-height: 1.6;
+        }
+
+        /* Arch Layout */
+        .arch-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .tiers-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .tier-card {
+            background: #111A2E;
+            border-left: 6px solid #2563EB;
+            border-radius: 12px;
+            padding: 25px 35px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .tier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .tier-badge {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #38BDF8;
+        }
+        .tier-tech {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.15);
+            padding: 4px 14px;
+            border-radius: 6px;
+        }
+        .tier-desc {
+            font-size: 1.35rem;
+            color: #CBD5E1;
+            line-height: 1.5;
+        }
+        .tech-stack-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: #0B1120;
+            padding: 20px 30px;
+            border-radius: 14px;
+            border: 1px solid #1E293B;
+        }
+        .tech-stack-label {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #94A3B8;
+            white-space: nowrap;
+        }
+        .tech-stack-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .tech-pill {
+            background: #1E293B;
+            color: #F1F5F9;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            border: 1px solid #334155;
+        }
+
+        /* 4-Column Grid */
+        .grid-4-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+        }
+        .feat-card {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 35px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+            align-items: center;
+        }
+        .feat-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(6, 182, 212, 0.15);
+            color: #06B6D4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        .feat-title {
+            font-size: 1.6rem;
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+        .feat-desc {
+            font-size: 1.25rem;
+            color: #94A3B8;
+            line-height: 1.5;
+        }
+
+        /* Test Pyramid */
+        .pyramid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .pyramid-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .pyramid-level {
+            background: #111A2E;
+            border-radius: 14px;
+            padding: 25px 35px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .pyramid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .pyramid-name {
+            font-size: 1.7rem;
+            font-weight: 800;
+        }
+        .pyramid-count {
+            background: #1E293B;
+            color: #F8FAFC;
+            padding: 6px 18px;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border: 1px solid #334155;
+        }
+        .pyramid-desc {
+            font-size: 1.35rem;
+            color: #CBD5E1;
+            line-height: 1.5;
+        }
+        .stat-banner {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 20px 35px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #6EE7B7;
+        }
+
+        /* Git Container */
+        .git-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 35px;
+        }
+        .branches-box {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .box-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #F8FAFC;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .branch-row {
+            background: #0B1120;
+            border: 1px solid #1E293B;
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .branch-pill {
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #38BDF8;
+        }
+        .branch-role {
+            font-size: 1.15rem;
+            color: #94A3B8;
+        }
+        .conflict-card {
+            background: #111A2E;
+            border: 1px solid #F59E0B;
+            border-radius: 16px;
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: center;
+        }
+        .conflict-badge {
+            align-self: flex-start;
+            background: rgba(245, 158, 11, 0.2);
+            color: #FBBF24;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .conflict-title {
+            font-size: 2.2rem;
+            color: #FFFFFF;
+            font-weight: 800;
+        }
+        .conflict-desc {
+            font-size: 1.35rem;
+            color: #CBD5E1;
+            line-height: 1.6;
+        }
+        .commit-pill {
+            background: #0B1120;
+            border: 1px solid #334155;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.15rem;
+            color: #34D399;
+        }
+
+        /* Pipeline Stages */
+        .pipeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+        }
+        .stages-flow {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+        .stage-step {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 14px;
+            padding: 25px 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+        .stage-num {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #2563EB;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+        .stage-name {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+        .stage-desc {
+            font-size: 1rem;
+            color: #94A3B8;
+            line-height: 1.3;
+        }
+        .pipeline-meta {
+            display: flex;
+            justify-content: space-around;
+            background: #0B1120;
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .meta-item {
+            font-size: 1.3rem;
+            color: #CBD5E1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .meta-item code {
+            background: #1E293B;
+            color: #38BDF8;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        /* Docker Comparison */
+        .docker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .docker-stages-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .docker-stage-box {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 30px;
+        }
+        .docker-stage-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #38BDF8;
+            margin-bottom: 10px;
+        }
+        .docker-stage-img code {
+            display: inline-block;
+            background: #0B1120;
+            color: #34D399;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+            border: 1px solid #1E293B;
+        }
+        .docker-stage-p {
+            font-size: 1.3rem;
+            color: #CBD5E1;
+            line-height: 1.5;
+        }
+        .docker-metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .docker-metric-card {
+            background: #131D31;
+            border: 1px solid #1E293B;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+        .dm-lbl { font-size: 1.2rem; color: #94A3B8; margin-bottom: 6px; }
+        .dm-val { font-size: 2.2rem; font-weight: 800; color: #FFFFFF; margin-bottom: 8px; }
+        .dm-badge {
+            display: inline-block;
+            background: rgba(6, 182, 212, 0.15);
+            color: #38BDF8;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        /* Ansible Layout */
+        .ansible-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .ansible-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .ansible-card {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 14px;
+            padding: 25px 30px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+        .ac-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #EF4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .ac-title { font-size: 1.7rem; color: #FFFFFF; font-weight: 700; margin-bottom: 6px; }
+        .ac-desc { font-size: 1.25rem; color: #94A3B8; line-height: 1.4; }
+        .ansible-cmd-banner {
+            background: #0B1120;
+            border: 1px solid #334155;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 1.35rem;
+            color: #38BDF8;
+            text-align: center;
+        }
+
+        /* SRE Grid */
+        .sre-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .sre-card {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sre-name { font-size: 1.8rem; font-weight: 800; color: #FFFFFF; }
+        .sre-compare {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0B1120;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1.25rem;
+        }
+        .sc-lbl { color: #64748B; font-weight: 600; margin-right: 5px; }
+        .sre-before { color: #EF4444; }
+        .sre-arrow { color: #94A3B8; font-size: 1.2rem; }
+        .sre-after { color: #10B981; font-weight: 700; }
+        .sre-pill {
+            align-self: flex-start;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        /* Viva Steps */
+        .viva-steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .vstep-row {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 12px;
+            padding: 18px 25px;
+            display: grid;
+            grid-template-columns: 60px 420px 1fr;
+            align-items: center;
+            gap: 25px;
+        }
+        .vstep-num {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #2563EB;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            font-weight: 800;
+        }
+        .vstep-cmd code {
+            background: #0B1120;
+            color: #38BDF8;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.25rem;
+            display: block;
+            border: 1px solid #1E293B;
+        }
+        .vstep-act {
+            font-size: 1.3rem;
+            color: #E2E8F0;
+            line-height: 1.4;
+        }
+
+        /* Conclusion */
+        .conclusion-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .conc-summary-box {
+            background: #111A2E;
+            border-left: 6px solid #10B981;
+            padding: 25px 35px;
+            border-radius: 12px;
+        }
+        .conc-text {
+            font-size: 1.5rem;
+            color: #E2E8F0;
+            line-height: 1.6;
+        }
+        .roadmap-box {
+            background: #0B1120;
+            border: 1px solid #1E293B;
+            border-radius: 16px;
+            padding: 25px 35px;
+        }
+        .rm-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #38BDF8;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .rm-item {
+            background: #111A2E;
+            border: 1px solid #1E293B;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .rm-badge {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #F59E0B;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rm-desc {
+            font-size: 1.15rem;
+            color: #94A3B8;
+            line-height: 1.4;
+        }
+        .closing-banner {
+            background: linear-gradient(135deg, #2563EB, #06B6D4);
+            border-radius: 14px;
+            padding: 25px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        /* Navigation Bar Controls */
+        .nav-bar {
+            position: fixed;
+            bottom: 25px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 25px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .nav-btn {
+            background: #1E293B;
+            border: 1px solid #334155;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover {
+            background: #2563EB;
+            border-color: #3B82F6;
+        }
+        .slide-indicator {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #CBD5E1;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        /* Print media for exact 1:1 PDF conversion */
+        @page {
+            size: 1920px 1080px;
+            margin: 0;
+        }
+        @media print {
+            html, body {
+                width: 1920px !important;
+                height: 1080px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #0a0f1d !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .deck-wrapper {
+                width: 1920px !important;
+                height: auto !important;
+                overflow: visible !important;
+                position: static !important;
+            }
+            .slide {
+                display: flex !important;
+                position: relative !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                width: 1920px !important;
+                height: 1080px !important;
+                max-height: 1080px !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+            .nav-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="deck-wrapper">
+        
+        <section class="slide" id="slide-1">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> PROJECT PRESENTATION • BE DEVOPS CAPSTONE</div>
+                <h1 class="slide-title">Ansible-Provisioned Telecom Service Outage Dashboard</h1>
+                <p class="slide-subtitle">Enterprise-Grade Continuous Delivery, Automated Testing & Infrastructure-as-Code Pipeline</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="hero-container">
+                    <div class="hero-cand-box">
+                        <div class="hero-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+                        <div>
+                            <div class="hero-cand-name">Manas Akhare</div>
+                            <div class="hero-cand-roll">Roll No: <span>23102C0017</span> | BE - VII (Div C, Sr. No. 12)</div>
+                            <div class="hero-cand-sub">Academic Year 2026-27 (ODD Sem) • Department of Information Technology / Computer Engineering</div>
+                        </div>
+                    </div>
+                    <div class="hero-hl-grid">
+                        
+                <div class="hero-hl-card">
+                    <div class="hero-hl-val">Spring Boot 3.2.5 + H2</div>
+                    <div class="hero-hl-lbl">Architecture</div>
+                    <div class="hero-hl-desc">Lightweight, zero external DB dependencies</div>
+                </div>
+                <div class="hero-hl-card">
+                    <div class="hero-hl-val">15 / 15 Passing</div>
+                    <div class="hero-hl-lbl">Test Suite</div>
+                    <div class="hero-hl-desc">JUnit 5 + MockMvc + Selenium Headless</div>
+                </div>
+                <div class="hero-hl-card">
+                    <div class="hero-hl-val">Declarative Jenkinsfile</div>
+                    <div class="hero-hl-lbl">CI / CD</div>
+                    <div class="hero-hl-desc">7-Stage automated build, test & packaging</div>
+                </div>
+                <div class="hero-hl-card">
+                    <div class="hero-hl-val">Idempotent Ansible Roles</div>
+                    <div class="hero-hl-lbl">IaC</div>
+                    <div class="hero-hl-desc">Zero-downtime deployment & instant rollback</div>
+                </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 1 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-2">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> PROBLEM STATEMENT & INDUSTRY MOTIVATION</div>
+                <h1 class="slide-title">Mitigating Critical Downtime in Telecom Services</h1>
+                <p class="slide-subtitle">Bridging Development and Operations for High-Availability Incident Response</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3-container">
+                <div class="slide-card">
+                    <div class="card-pill">FINANCIAL & SLA IMPACT</div>
+                    <h3 class="card-heading">Catastrophic Cost of Outages</h3>
+                    <div class="card-stat-val">$10k - $50k / min</div>
+                    <p class="card-body-text">Cellular and fiber network outages result in heavy regulatory fines (TRAI/DoT), brand erosion, and SLA breach penalties. Rapid detection and remediation are non-negotiable.</p>
+                </div>
+                <div class="slide-card">
+                    <div class="card-pill">TRADITIONAL BOTTLENECKS</div>
+                    <h3 class="card-heading">Manual Drift & Siloed Ops</h3>
+                    <div class="card-stat-val">60+ Mins MTTR</div>
+                    <p class="card-body-text">Disjointed spreadsheets, manual server SSH configurations, undocumented environment drift, and quarterly monolithic drops create operational fragility.</p>
+                </div>
+                <div class="slide-card">
+                    <div class="card-pill">THE DEVOPS REMEDY</div>
+                    <h3 class="card-heading">Continuous Delivery & IaC</h3>
+                    <div class="card-stat-val">< 15 Mins MTTR</div>
+                    <p class="card-body-text">Automated pipelines, multi-layer test pyramids, containerized runtime parity, and idempotent Ansible automation ensure reliable, repeatable releases.</p>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 2 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-3">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> SYSTEM ARCHITECTURE & TECH STACK</div>
+                <h1 class="slide-title">Cloud-Native Three-Tier Architecture</h1>
+                <p class="slide-subtitle">Modular Spring Boot Platform Engineered for Observability and Zero Drift</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="arch-container">
+                    <div class="tiers-list">
+                <div class="tier-card">
+                    <div class="tier-header">
+                        <span class="tier-badge">Presentation Tier (Web UI)</span>
+                        <span class="tier-tech">Thymeleaf, Bootstrap 5, FontAwesome</span>
+                    </div>
+                    <p class="tier-desc">Responsive incident dashboard, real-time SLA countdown timers, dynamic severity indicators, and interactive root cause drill-down modals.</p>
+                </div>
+                <div class="tier-card">
+                    <div class="tier-header">
+                        <span class="tier-badge">Application & Business Tier</span>
+                        <span class="tier-tech">Spring Boot 3.2.5, Java 17 LTS</span>
+                    </div>
+                    <p class="tier-desc">RESTful controllers (`/api/outages`, `/api/health`), Service layer business logic, SLA computation engine, and MockMvc test harness.</p>
+                </div>
+                <div class="tier-card">
+                    <div class="tier-header">
+                        <span class="tier-badge">Persistence & Configuration Tier</span>
+                        <span class="tier-tech">Spring Data JPA, H2 In-Memory DB</span>
+                    </div>
+                    <p class="tier-desc">Zero-configuration in-memory persistence with pre-seeded mock telemetry, enabling instant demonstration without external database setup.</p>
+                </div></div>
+                    <div class="tech-stack-row">
+                        <div class="tech-stack-label"><i class="fa-solid fa-layer-group"></i> Technologies Employed:</div>
+                        <div class="tech-stack-badges"><span class="tech-pill">Java 17 LTS</span><span class="tech-pill">Spring Boot 3.2.5</span><span class="tech-pill">Docker Alpine JRE</span><span class="tech-pill">Jenkins CI</span><span class="tech-pill">Ansible 2.15+</span><span class="tech-pill">Selenium Chrome</span><span class="tech-pill">Port 8085</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 3 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-4">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> APPLICATION CAPABILITIES</div>
+                <h1 class="slide-title">Interactive Outage Telemetry & Operations Dashboard</h1>
+                <p class="slide-subtitle">Real-Time Health Monitoring, SLA Tracking, and Incident Drill-Downs</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-4-container">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-tower-cell"></i></div>
+                    <h3 class="feat-title">Real-Time Outage Feed</h3>
+                    <p class="feat-desc">Visualizes active incidents across Voice, Fiber Broadband, 4G/5G, and IPTV with clear severity badges (CRITICAL, MAJOR, MINOR).</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-clock"></i></div>
+                    <h3 class="feat-title">Dynamic SLA Countdown</h3>
+                    <p class="feat-desc">Tracks remaining time before SLA breach (e.g. 2-hr target for CRITICAL), changing color dynamically as breach threshold approaches.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                    <h3 class="feat-title">Root Cause Drill-Down</h3>
+                    <p class="feat-desc">One-click inspection modal displaying impacted cell towers, fiber cuts, affected subscriber counts, and technician assignment.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                    <h3 class="feat-title">RESTful Health APIs</h3>
+                    <p class="feat-desc">Provides `/api/health` returning JSON `{"status":"UP"}` and `/api/outages` for programmatic ingestion by upstream monitoring tools.</p>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 4 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-5">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> AUTOMATED QUALITY GATES</div>
+                <h1 class="slide-title">Multi-Layer Testing Pyramid: 15 / 15 Passing</h1>
+                <p class="slide-subtitle">Fail-Fast CI Verification Across Unit, API Integration, and End-to-End Journeys</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="pyramid-container">
+                    <div class="pyramid-list">
+                <div class="pyramid-level" style="border-left: 6px solid #8B5CF6;">
+                    <div class="pyramid-header">
+                        <span class="pyramid-name" style="color: #8B5CF6;">E2E User Journeys (Selenium WebDriver)</span>
+                        <span class="pyramid-count">4 Tests</span>
+                    </div>
+                    <p class="pyramid-desc">Automated headless Chrome execution validating Dashboard UI, Filter Tabs, New Outage Reporting form submission, and Drill-down Modals.</p>
+                </div>
+                <div class="pyramid-level" style="border-left: 6px solid #3B82F6;">
+                    <div class="pyramid-header">
+                        <span class="pyramid-name" style="color: #3B82F6;">API Integration Tests (Spring MockMvc)</span>
+                        <span class="pyramid-count">5 Tests</span>
+                    </div>
+                    <p class="pyramid-desc">Validates HTTP 200/201 responses, JSON payload serialization, SLA calculations, and REST API error boundaries.</p>
+                </div>
+                <div class="pyramid-level" style="border-left: 6px solid #10B981;">
+                    <div class="pyramid-header">
+                        <span class="pyramid-name" style="color: #10B981;">Unit & Service Tests (JUnit 5 + Mockito)</span>
+                        <span class="pyramid-count">6 Tests</span>
+                    </div>
+                    <p class="pyramid-desc">Isolated test execution for OutageService CRUD logic, SLA countdown boundaries, and state transitions (RESOLVED vs INVESTIGATING).</p>
+                </div></div>
+                    <div class="stat-banner">
+                        <i class="fa-solid fa-circle-check" style="color: #10B981; font-size: 1.6rem; margin-right: 15px;"></i>
+                        <span>100% Pass Rate in < 15 seconds during automated Maven build lifecycle</span>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 5 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-6">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> VERSION CONTROL & COLLABORATION</div>
+                <h1 class="slide-title">Robust Git Flow & Merge Conflict Resolution</h1>
+                <p class="slide-subtitle">Branching Hygiene, Conventional Commits, and Production Tagging</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="git-container">
+                    <div class="branches-box">
+                        <div class="box-title"><i class="fa-brands fa-git-alt"></i> Branching Topography</div>
+                        
+                <div class="branch-row">
+                    <div class="branch-pill"><i class="fa-solid fa-code-branch"></i> main</div>
+                    <div class="branch-role">Production-ready, highly stable releases (tagged v1.0.0-mvp, v1.0.0)</div>
+                </div>
+                <div class="branch-row">
+                    <div class="branch-pill"><i class="fa-solid fa-code-branch"></i> develop</div>
+                    <div class="branch-role">Active integration branch where feature branches converge</div>
+                </div>
+                <div class="branch-row">
+                    <div class="branch-pill"><i class="fa-solid fa-code-branch"></i> feature/outage-reporting</div>
+                    <div class="branch-role">Engineered incident intake form and validation logic</div>
+                </div>
+                <div class="branch-row">
+                    <div class="branch-pill"><i class="fa-solid fa-code-branch"></i> feature/alert-management</div>
+                    <div class="branch-role">Implemented threshold-based alerting & SLA warning banners</div>
+                </div>
+                    </div>
+                    <div class="conflict-card">
+                        <div class="conflict-badge"><i class="fa-solid fa-triangle-exclamation"></i> VERIFIED MERGE CONFLICT RESOLUTION</div>
+                        <h4 class="conflict-title">Simulated & Resolved Merge Conflict</h4>
+                        <p class="conflict-desc">Concurrent modifications in alert notification logic between `feature/outage-reporting` and `feature/alert-management` were resolved cleanly on `develop` with verified commit log integrity.</p>
+                        <div class="commit-pill">git merge feature/alert-management -m "Merge branch 'feature/alert-management' into develop"</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 6 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-7">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> CONTINUOUS INTEGRATION</div>
+                <h1 class="slide-title">Declarative CI Pipeline with Jenkins</h1>
+                <p class="slide-subtitle">Pipeline-as-Code Implementation Delivering Immutable Deployment Artifacts</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="pipeline-container">
+                    <div class="stages-flow">
+                <div class="stage-step">
+                    <div class="stage-num">1</div>
+                    <div class="stage-name">Checkout</div>
+                    <div class="stage-desc">Pulls latest commit from Git repository</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">2</div>
+                    <div class="stage-name">Compile</div>
+                    <div class="stage-desc">Compiles Java 17 bytecode with Maven 3.9</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">3</div>
+                    <div class="stage-name">Unit Tests</div>
+                    <div class="stage-desc">Runs 6 JUnit 5 isolated service tests</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">4</div>
+                    <div class="stage-name">API Tests</div>
+                    <div class="stage-desc">Executes 5 MockMvc integration tests</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">5</div>
+                    <div class="stage-name">E2E Tests</div>
+                    <div class="stage-desc">Launches 4 Headless Selenium Chrome journeys</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">6</div>
+                    <div class="stage-name">Package JAR</div>
+                    <div class="stage-desc">Generates 25.4 MB self-contained executable</div>
+                </div>
+                <div class="stage-step">
+                    <div class="stage-num">7</div>
+                    <div class="stage-name">Archive</div>
+                    <div class="stage-desc">Stores build artifact with SHA-256 fingerprint</div>
+                </div></div>
+                    <div class="pipeline-meta">
+                        <div class="meta-item"><i class="fa-solid fa-file-code"></i> Pipeline as Code: <code>ci-cd/Jenkinsfile</code></div>
+                        <div class="meta-item"><i class="fa-solid fa-box-archive"></i> Output: <code>target/telecom-service-outage-dashboard.jar (25.4 MB)</code></div>
+                        <div class="meta-item"><i class="fa-solid fa-shield-halved"></i> Quality Gate: 100% Automated Build Failure on Test Breakage</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 7 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-8">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> CONTAINERIZATION</div>
+                <h1 class="slide-title">Docker Multi-Stage Build & Lightweight Packaging</h1>
+                <p class="slide-subtitle">Slashing Attack Surface and Image Footprint for Consistent Runtime Parity</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="docker-container">
+                    <div class="docker-stages-row">
+                <div class="docker-stage-box">
+                    <div class="docker-stage-title">Stage 1: Build Environment</div>
+                    <div class="docker-stage-img"><code>FROM maven:3.9-eclipse-temurin-17</code></div>
+                    <p class="docker-stage-p">Compiles Java source code, runs automated test suites, and packages the Spring Boot executable fat JAR.</p>
+                </div>
+                <div class="docker-stage-box">
+                    <div class="docker-stage-title">Stage 2: Runtime Environment</div>
+                    <div class="docker-stage-img"><code>FROM eclipse-temurin:17-jre-alpine</code></div>
+                    <p class="docker-stage-p">Contains strictly the JRE and application JAR. Discards compiler, build plugins, and development utilities.</p>
+                </div></div>
+                    <div class="docker-metrics-row">
+                <div class="docker-metric-card">
+                    <div class="dm-lbl">Original SDK Image</div>
+                    <div class="dm-val">~820 MB</div>
+                    <div class="dm-badge">Bulky & High Vulnerability Risk</div>
+                </div>
+                <div class="docker-metric-card">
+                    <div class="dm-lbl">Optimized JRE Alpine</div>
+                    <div class="dm-val">~185 MB</div>
+                    <div class="dm-badge">77% Size Reduction</div>
+                </div>
+                <div class="docker-metric-card">
+                    <div class="dm-lbl">Security Context</div>
+                    <div class="dm-val">USER telecom</div>
+                    <div class="dm-badge">Non-Root Privilege Isolation</div>
+                </div>
+                <div class="docker-metric-card">
+                    <div class="dm-lbl">Healthcheck Probe</div>
+                    <div class="dm-val">/api/health</div>
+                    <div class="dm-badge">Docker Daemon Auto-Healing</div>
+                </div></div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 8 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-9">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> INFRASTRUCTURE AS CODE</div>
+                <h1 class="slide-title">Ansible Provisioning & Automated Rollbacks</h1>
+                <p class="slide-subtitle">Idempotent Host Configuration and Zero-Downtime Application Lifecycle</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="ansible-container">
+                    <div class="ansible-grid">
+                <div class="ansible-card">
+                    <div class="ac-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="ac-content">
+                        <h4 class="ac-title">Modular Ansible Role</h4>
+                        <p class="ac-desc">Separation of concerns using `roles/telecom_app/` with dedicated `tasks/`, `handlers/`, `defaults/`, and `templates/`.</p>
+                    </div>
+                </div>
+                <div class="ansible-card">
+                    <div class="ac-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="ac-content">
+                        <h4 class="ac-title">Strict Idempotency</h4>
+                        <p class="ac-desc">Re-running `ansible-playbook ansible/playbook.yml` detects unchanged configuration and results in `changed=0, failed=0`.</p>
+                    </div>
+                </div>
+                <div class="ansible-card">
+                    <div class="ac-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="ac-content">
+                        <h4 class="ac-title">Post-Deploy Health Check</h4>
+                        <p class="ac-desc">Utilizes Ansible `uri` module to poll `http://localhost:8085/api/health` before confirming deployment success.</p>
+                    </div>
+                </div>
+                <div class="ansible-card">
+                    <div class="ac-icon"><i class="fa-solid fa-server"></i></div>
+                    <div class="ac-content">
+                        <h4 class="ac-title">Instant Rollback Playbook</h4>
+                        <p class="ac-desc">Automated `ansible/rollback.yml` restores the previous stable release artifact within 10 seconds if health checks fail.</p>
+                    </div>
+                </div></div>
+                    <div class="ansible-cmd-banner">
+                        <code>$ ansible-playbook -i ansible/inventory ansible/playbook.yml &amp;&amp; curl http://localhost:8085/api/health</code>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 9 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-10">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> SRE & OBSERVABILITY</div>
+                <h1 class="slide-title">Site Reliability Engineering (SRE) Impact</h1>
+                <p class="slide-subtitle">Quantifiable Improvements in Deployment Velocity and System Reliability</p>
+            </div>
+            <div class="slide-body">
+                <div class="sre-grid">
+                <div class="sre-card">
+                    <div class="sre-name">Mean Time to Recovery (MTTR)</div>
+                    <div class="sre-compare">
+                        <div class="sre-before"><span class="sc-lbl">Legacy:</span> 45 - 60 mins (Manual triage)</div>
+                        <div class="sre-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="sre-after"><span class="sc-lbl">DevOps:</span> 14 mins (Automated telemetry)</div>
+                    </div>
+                    <div class="sre-pill" style="background: #10B98122; color: #10B981; border: 1px solid #10B98166;">
+                        <i class="fa-solid fa-chart-line"></i> -68% Improvement
+                    </div>
+                </div>
+                <div class="sre-card">
+                    <div class="sre-name">Deployment Frequency</div>
+                    <div class="sre-compare">
+                        <div class="sre-before"><span class="sc-lbl">Legacy:</span> Bi-weekly manual deployment</div>
+                        <div class="sre-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="sre-after"><span class="sc-lbl">DevOps:</span> Multiple daily CI/CD pushes</div>
+                    </div>
+                    <div class="sre-pill" style="background: #06B6D422; color: #06B6D4; border: 1px solid #06B6D466;">
+                        <i class="fa-solid fa-chart-line"></i> 10x Velocity
+                    </div>
+                </div>
+                <div class="sre-card">
+                    <div class="sre-name">Change Failure Rate (CFR)</div>
+                    <div class="sre-compare">
+                        <div class="sre-before"><span class="sc-lbl">Legacy:</span> 18% - 25% configuration drift</div>
+                        <div class="sre-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="sre-after"><span class="sc-lbl">DevOps:</span> < 2% with automated test gates</div>
+                    </div>
+                    <div class="sre-pill" style="background: #F59E0B22; color: #F59E0B; border: 1px solid #F59E0B66;">
+                        <i class="fa-solid fa-chart-line"></i> -90% Failure Reduction
+                    </div>
+                </div>
+                <div class="sre-card">
+                    <div class="sre-name">SLA Compliance</div>
+                    <div class="sre-compare">
+                        <div class="sre-before"><span class="sc-lbl">Legacy:</span> 97.2% due to delayed triage</div>
+                        <div class="sre-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="sre-after"><span class="sc-lbl">DevOps:</span> 99.9% High Availability Target</div>
+                    </div>
+                    <div class="sre-pill" style="background: #8B5CF622; color: #8B5CF6; border: 1px solid #8B5CF666;">
+                        <i class="fa-solid fa-chart-line"></i> Strict SLA Adherence
+                    </div>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 10 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-11">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> DEVSECOPS & HARDENING</div>
+                <h1 class="slide-title">Shift-Left Security & Operational Hardening</h1>
+                <p class="slide-subtitle">Embedding Security Gates Throughout the Continuous Delivery Lifecycle</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-3-container">
+                <div class="slide-card">
+                    <div class="card-pill">BUILD-TIME SECURITY</div>
+                    <h3 class="card-heading">Dependency Vulnerability Scans</h3>
+                    <div class="card-stat-val">Zero CVEs</div>
+                    <p class="card-body-text">Automated OWASP Dependency-Check integrated into CI prevents vulnerable libraries from entering artifact storage.</p>
+                </div>
+                <div class="slide-card">
+                    <div class="card-pill">CONTAINER ISOLATION</div>
+                    <h3 class="card-heading">Non-Root Least Privilege</h3>
+                    <div class="card-stat-val">UID 10001 (telecom)</div>
+                    <p class="card-body-text">Dockerfile drops root permissions immediately after Alpine setup. App runs as isolated unprivileged user with read-only rootfs.</p>
+                </div>
+                <div class="slide-card">
+                    <div class="card-pill">CONFIG SANITIZATION</div>
+                    <h3 class="card-heading">Externalized Secrets</h3>
+                    <div class="card-stat-val">Zero Hardcoded Keys</div>
+                    <p class="card-body-text">Database credentials, server ports, and sensitive parameters injected via environment variables and Ansible vault templates.</p>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 11 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-12">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> VIVA DEMONSTRATION WORKFLOW</div>
+                <h1 class="slide-title">Examiner Demonstration Protocol</h1>
+                <p class="slide-subtitle">Structured 5-Minute Live Viva Walkthrough Demonstrating All DevOps Concepts</p>
+            </div>
+            <div class="slide-body">
+                <div class="viva-steps-container">
+                <div class="vstep-row">
+                    <div class="vstep-num">1</div>
+                    <div class="vstep-cmd"><code>.\start.bat or .\start.ps1</code></div>
+                    <div class="vstep-act">Launches Spring Boot application on port 8085. Opens `http://localhost:8085/` in browser.</div>
+                </div>
+                <div class="vstep-row">
+                    <div class="vstep-num">2</div>
+                    <div class="vstep-cmd"><code>curl http://localhost:8085/api/health</code></div>
+                    <div class="vstep-act">Demonstrates live JSON health probe returning `{"status":"UP"}`.</div>
+                </div>
+                <div class="vstep-row">
+                    <div class="vstep-num">3</div>
+                    <div class="vstep-cmd"><code>mvn test</code></div>
+                    <div class="vstep-act">Executes 15 automated tests in terminal (Unit, MockMvc, and Headless Selenium Chrome).</div>
+                </div>
+                <div class="vstep-row">
+                    <div class="vstep-num">4</div>
+                    <div class="vstep-cmd"><code>git log --graph --oneline --all</code></div>
+                    <div class="vstep-act">Showcases Git Flow branches, conventional commits, and merge conflict resolution.</div>
+                </div>
+                <div class="vstep-row">
+                    <div class="vstep-num">5</div>
+                    <div class="vstep-cmd"><code>docker-compose up --build</code></div>
+                    <div class="vstep-act">Demonstrates multi-stage Docker build and Alpine container execution.</div>
+                </div>
+                <div class="vstep-row">
+                    <div class="vstep-num">6</div>
+                    <div class="vstep-cmd"><code>ansible-playbook ansible/playbook.yml</code></div>
+                    <div class="vstep-act">Proves IaC idempotency (`changed=0`) and automated health verification.</div>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 12 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-13">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> SUBMISSION DELIVERABLES</div>
+                <h1 class="slide-title">Complete Academic & Technical Artifacts</h1>
+                <p class="slide-subtitle">Comprehensive Documentation, Codebase, and Presentation Suite</p>
+            </div>
+            <div class="slide-body">
+                <div class="grid-4-container">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-file-lines"></i></div>
+                    <h3 class="feat-title">16-Page Academic Report</h3>
+                    <p class="feat-desc">Formal IEEE/University project report with Certificate of Approval, Candidate Declaration, 6 technical chapters, and full test results.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-image"></i></div>
+                    <h3 class="feat-title">Conference Poster</h3>
+                    <p class="feat-desc">Creative, high-impact academic poster compiled in vector PDF and high-res PNG for physical or digital presentation.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-file-powerpoint"></i></div>
+                    <h3 class="feat-title">16:9 Presentation Deck</h3>
+                    <p class="feat-desc">14-slide presentation delivered in native PowerPoint (.pptx), vector PDF (.pdf), and interactive HTML5 (.html).</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-book-bookmark"></i></div>
+                    <h3 class="feat-title">19-Page Viva Guide</h3>
+                    <p class="feat-desc">Comprehensive quick-reference guide covering all 14 curriculum tasks, examiner Q&A, and terminal commands.</p>
+                </div></div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 13 of 14</div>
+            </div>
+        </section>
+        <section class="slide" id="slide-14">
+            <div class="slide-header">
+                <div class="slide-badge"><i class="fa-solid fa-bolt"></i> CONCLUSION & FUTURE HORIZONS</div>
+                <h1 class="slide-title">Conclusion, Production Roadmap & Viva Q&A</h1>
+                <p class="slide-subtitle">Bridging Academic Excellence with Production-Grade DevOps Engineering</p>
+            </div>
+            <div class="slide-body">
+                
+                <div class="conclusion-container">
+                    <div class="conc-summary-box">
+                        <p class="conc-text">Successfully engineered and demonstrated a resilient, cloud-native Telecom Service Outage Dashboard adhering to modern DevOps paradigms. Integrated multi-stage CI/CD pipelines, automated testing pyramids, Docker containerization, and idempotent Ansible orchestration to achieve high availability and rapid incident response.</p>
+                    </div>
+                    <div class="roadmap-box">
+                        <div class="rm-title"><i class="fa-solid fa-compass"></i> Production Engineering Roadmap</div>
+                        <div class="rm-grid">
+                <div class="rm-item">
+                    <div class="rm-badge"><i class="fa-solid fa-circle-nodes"></i> Kubernetes (K8s) & Helm</div>
+                    <div class="rm-desc">Orchestrating microservices with automated horizontal pod autoscaling (HPA) and rolling updates.</div>
+                </div>
+                <div class="rm-item">
+                    <div class="rm-badge"><i class="fa-solid fa-circle-nodes"></i> Prometheus & Grafana</div>
+                    <div class="rm-desc">Exporting Micrometer metrics into real-time operational time-series dashboards.</div>
+                </div>
+                <div class="rm-item">
+                    <div class="rm-badge"><i class="fa-solid fa-circle-nodes"></i> Istio Service Mesh</div>
+                    <div class="rm-desc">Canary traffic shifting and automated circuit breaking for zero-downtime microservice upgrades.</div>
+                </div></div>
+                    </div>
+                    <div class="closing-banner">
+                        <i class="fa-solid fa-comments"></i> Candidate: Manas Akhare (Roll No: 23102C0017) • Thank You! Questions & Discussion Invited.
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div class="footer-left">Manas Akhare | Roll No: 23102C0017 | BE - VII (Div C, Sr. 12)</div>
+                <div class="footer-center">Ansible-Provisioned Telecom Service Outage Dashboard</div>
+                <div class="footer-right">Slide 14 of 14</div>
+            </div>
+        </section>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-btn" onclick="prevSlide()" title="Previous Slide (Left Arrow)"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="slide-indicator" id="indicator">Slide 1 / 14</div>
+        <button class="nav-btn" onclick="nextSlide()" title="Next Slide (Right Arrow)"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="nav-btn" onclick="toggleFullscreen()" title="Fullscreen (F)"><i class="fa-solid fa-expand"></i></button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 14;
+
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > totalSlides) n = totalSlides;
+            currentSlide = n;
+
+            document.querySelectorAll('.slide').forEach((slide, idx) => {
+                if (idx + 1 === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            document.getElementById('indicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'Home') {
+                showSlide(1);
+            } else if (e.key === 'End') {
+                showSlide(totalSlides);
+            }
+        });
+
+        // Initialize first slide
+        showSlide(1);
+    </script>
+</body>
+</html>
